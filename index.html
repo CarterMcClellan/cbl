@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CBL REPL</title>
+</head>
+<body>
+    <h1>CBL REPL</h1>
+    <textarea id="code" rows="10" cols="50">Enter your code here...</textarea><br>
+    <button id="run">Run</button>
+    <pre id="output"></pre>
+
+    <script type="module">
+        import init, { execute_code } from './cbl_lib.js';
+
+        async function runWasm() {
+            await init(); // Initialize the WebAssembly module
+
+            document.getElementById('run').addEventListener('click', () => {
+                const code = document.getElementById('code').value;
+                try {
+                    const result = execute_code(code);
+                    document.getElementById('output').textContent = result;
+                } catch (e) {
+                    document.getElementById('output').textContent = `Error: ${e.message}`;
+                }
+            });
+        }
+
+        runWasm();
+    </script>
+</body>
+</html>
