@@ -34,3 +34,5 @@ python3 -m http.server
 
 ## Credits
 I reference the [lox-rs](https://github.com/jeschkies/lox-rs?tab=readme-ov-file) impl a lot
+
+Last stopped here: https://craftinginterpreters.com/evaluating-expressions.html#hooking-up-the-interpreter

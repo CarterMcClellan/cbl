@@ -16,28 +16,44 @@ pub enum Expr {
     Unary { operator: Token, right: Box<Expr> },
 }
 
-pub trait Visitor<R> {
-    fn visit_binary_expr(&self, left: &Expr, operator: &Token, right: &Expr) -> CblResult<R>;
-    fn visit_grouping_expr(&self, expression: &Expr) -> CblResult<R>;
-    fn visit_literal_expr(&self, value: &Object) -> CblResult<R>;
-    fn visit_unary_expr(&self, operator: &Token, right: &Expr) -> CblResult<R>;
-}
-
 impl Expr {
     /// Based on expresion type, call the appropriate visitor method
-    pub fn accept<R>(&self, visitor: &dyn Visitor<R>) -> CblResult<R> {
+    pub fn accept<R>(&self, visitor: &dyn expr::Visitor<R>) -> CblResult<R> {
         match self {
             Expr::Binary {
                 left,
                 operator,
                 right,
             } => visitor.visit_binary_expr(left, operator, right),
-            Expr::Grouping { expression } => visitor.visit_grouping_expr(expression),
-            Expr::Literal { value } => visitor.visit_literal_expr(value),
-            Expr::Unary { operator, right } => visitor.visit_unary_expr(operator, right),
+            Expr::Grouping { 
+                expression 
+            } => visitor.visit_grouping_expr(expression),
+            Expr::Literal { 
+                value 
+            } => visitor.visit_literal_expr(value),
+            Expr::Unary { 
+                operator, 
+                right 
+            } => visitor.visit_unary_expr(operator, right),
         }
     }
 }
+
+// The expr::Visitor trait is different from the stmt::Visitor trait
+// so we want to wrap all this in a separate module
+pub mod expr {
+    use crate::{token::{Token, Object}, error::CblResult};
+    use super::Expr;
+
+    pub trait Visitor<R> {
+        fn visit_binary_expr(&self, left: &Expr, operator: &Token, right: &Expr) -> CblResult<R>;
+        fn visit_grouping_expr(&self, expression: &Expr) -> CblResult<R>;
+        fn visit_literal_expr(&self, value: &Object) -> CblResult<R>;
+        fn visit_unary_expr(&self, operator: &Token, right: &Expr) -> CblResult<R>;
+    }
+}
+
+
 
 pub struct AstPrinter;
 
@@ -62,7 +78,7 @@ impl AstPrinter {
     }
 }
 
-impl Visitor<String> for AstPrinter {
+impl expr::Visitor<String> for AstPrinter {
     fn visit_binary_expr(&self, left: &Expr, operator: &Token, right: &Expr) -> CblResult<String> {
         self.parenthesize(operator.lexeme.clone(), vec![left, right])
     }
@@ -77,6 +93,38 @@ impl Visitor<String> for AstPrinter {
 
     fn visit_unary_expr(&self, operator: &Token, right: &Expr) -> CblResult<String> {
         self.parenthesize(operator.lexeme.clone(), vec![right])
+    }
+}
+
+// This component is super vague within the book
+// they have written a meta code generation block which
+// spits out the class definitions based on some algebra
+// where as the rust implementations I have seen online
+// have handwritten the gen'd code
+pub enum Stmt {
+    Expression { expression: Expr },
+    Print { expression: Expr },
+    Var { name: Token, initializer: Expr }, 
+}
+
+impl Stmt {
+    pub fn accept<R>(&self, visitor: &dyn stmt::Visitor<R>) -> CblResult<R> {
+        match self {
+            Stmt::Expression { expression } => visitor.visit_expression_stmt(expression),
+            Stmt::Print { expression } => visitor.visit_print_stmt(expression),
+            Stmt::Var { name, initializer } => visitor.visit_var_stmt(name, initializer),
+        }
+    }
+}
+
+pub mod stmt {
+    use crate::{token::{Token, Object}, error::CblResult};
+    use super::Expr;
+
+    pub trait Visitor<R> {
+        fn visit_expression_stmt(&self, expression: &Expr) -> CblResult<R>;
+        fn visit_print_stmt(&self, expression: &Expr) -> CblResult<R>;
+        fn visit_var_stmt(&self, name: &Token, initializer: &Expr) -> CblResult<R>;
     }
 }
 

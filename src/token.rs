@@ -42,10 +42,6 @@ impl Token {
             line,
         }
     }
-
-    fn to_string(&self) -> String {
-        format!("{:?} {} {}", self.type_, self.lexeme, self.literal)
-    }
 }
 
 #[derive(Debug, Clone, PartialEq)]

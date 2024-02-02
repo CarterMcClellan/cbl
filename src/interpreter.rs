@@ -4,13 +4,12 @@ use crate::token::{
     Token, TokenType,
 };
 use crate::ast::{
-    Visitor,
-    Expr,
+    Expr, expr, stmt, Stmt,
 };
 
 pub struct Interpreter {}
 
-impl Visitor<Object> for Interpreter {
+impl expr::Visitor<Object> for Interpreter {
 
     fn visit_binary_expr(&self, left: &Expr, operator: &Token, right: &Expr) -> CblResult<Object> {
         let l = self.evaluate(left)?;
@@ -86,6 +85,24 @@ impl Visitor<Object> for Interpreter {
     
 }
 
+// () -> void return type
+impl stmt::Visitor<()> for Interpreter {
+    fn visit_expression_stmt(&self, expression: &Expr) -> CblResult<()> {
+        self.evaluate(expression)?;
+        Ok(())
+    }
+
+    fn visit_print_stmt(&self, expression: &Expr) -> CblResult<()> {
+        let value = self.evaluate(expression)?;
+        println!("{}", value);
+        Ok(())
+    }
+
+    fn visit_var_stmt(&self, name: &Token, initializer: &Expr) -> CblResult<()> {
+        todo!()
+    }
+}
+
 impl Interpreter {
     pub fn new() -> Self {
         Interpreter {}
@@ -93,6 +110,10 @@ impl Interpreter {
 
     fn evaluate(&self, expr: &Expr) -> CblResult<Object> {
         expr.accept(self)
+    }
+
+    fn exectute(&self, stmt: &Stmt) -> CblResult<()> {
+        stmt.accept(self)
     }
 
     fn is_equal(&self, a: &Object, b: &Object) -> bool {
@@ -105,14 +126,20 @@ impl Interpreter {
         }
     }
 
-    pub fn interpret(&self, expr: &Expr) -> CblResult<Object> {
-        self.evaluate(expr)
+    pub fn interpret(&self, statements: Vec<Stmt>) -> CblResult<()>{
+        for statement in statements {
+            match self.exectute(&statement) {
+                Ok(_) => (),
+                Err(e) => return Err(e),
+            }
+        } 
+        Ok(())
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{scanner::Scanner, parser::Parser};
+    use crate::{scanner::Scanner, parser::{Parser, self}};
 
     use super::*;
 
@@ -126,8 +153,8 @@ mod tests {
         let expression = parser.parse().unwrap();
 
         let interpreter = Interpreter::new();
-        let result = interpreter.interpret(&expression).unwrap();
-        assert_eq!(result, Object::Number(-6998.568_f64));
+        let result = interpreter.interpret(expression).unwrap();
+        // assert_eq!(result, Object::Number(-6998.568_f64));
     }
 
     #[test]
@@ -140,7 +167,24 @@ mod tests {
         let expression = parser.parse().unwrap();
 
         let interpreter = Interpreter::new();
-        let result = interpreter.interpret(&expression).unwrap();
-        assert_eq!(result, Object::String("chessrules".to_string()));
+        let result = interpreter.interpret(expression).unwrap();
+        // assert_eq!(result, Object::String("chessrules".to_string()));
+    }
+
+    #[test]
+    fn test_interpreter_3() {
+        let source = "
+        print \"one\";
+        print true;
+        print 2 + 1;";
+
+        let mut scanner = Scanner::new(source);
+        let tokens = scanner.scan_tokens();
+
+        let mut parser = Parser::new(tokens.clone());
+        let statements = parser.parse().unwrap();
+
+        let interpreter = Interpreter::new();
+        let result = interpreter.interpret(statements).unwrap();
     }
 }

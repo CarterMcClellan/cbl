@@ -1,5 +1,3 @@
-use std::fmt::Display;
-
 use crate::token::{Object, Token, TokenType};
 
 pub struct Scanner {
@@ -103,7 +101,8 @@ impl Scanner {
                     }
                 }
                 // ignore whitespace
-                ' ' | '\r' | '\t' | '\n' => {}
+                ' ' | '\r' | '\t' => {},
+                '\n' => self.line += 1,
                 '"' => self.string(),
                 _ => {
                     if self.is_digit(c) {
@@ -197,10 +196,6 @@ impl Scanner {
 
     fn is_alpha(&self, c: char) -> bool {
         ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c == '_'
-    }
-
-    fn is_alpha_numeric(&self, c: char) -> bool {
-        self.is_alpha(c) || self.is_digit(c)
     }
 
     /// Store all of the characters between '0' and '9'

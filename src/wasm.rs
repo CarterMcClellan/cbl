@@ -11,11 +11,11 @@ pub fn execute_code(code: &str) -> Result<String, JsValue> {
     let mut parser = Parser::new(tokens);
     let expression_res = parser.parse();
 
-
     if let Ok(expression) = expression_res {
-        let result = interpreter.interpret(&expression);
+        let result = interpreter.interpret(expression);
         match result {
-            Ok(result) => return Ok(result.to_string()),
+            // TODO we need to find a way to pipe this output
+            Ok(result) => return Ok("Execution result".to_string()),
             Err(e) => eprintln!("Error: {:?}", e),
         }
     } else {
